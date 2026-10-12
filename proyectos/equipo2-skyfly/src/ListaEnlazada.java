@@ -4,12 +4,11 @@ import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 /**
- * Lista simplemente enlazada genérica, implementada a mano (nodos propios con enlace 'siguiente').
- * No usa java.util.LinkedList ni otras colecciones de java.util para almacenar datos.
+ * Lista simplemente enlazada implementada a mano (no usa colecciones de java.util).
+ * Cada nodo guarda un dato y un enlace "siguiente" al nodo que le sigue.
  */
 public class ListaEnlazada<T> implements Iterable<T> {
 
-    /** Nodo de la lista: guarda un dato y el enlace al siguiente nodo. */
     private static class Nodo<T> {
         T dato;
         Nodo<T> siguiente;
@@ -20,54 +19,41 @@ public class ListaEnlazada<T> implements Iterable<T> {
     }
 
     private Nodo<T> cabeza;
-    private Nodo<T> cola;
     private int tamanio;
 
     public int size() {
         return tamanio;
     }
 
-    public boolean estaVacia() {
+    public boolean isEmpty() {
         return tamanio == 0;
     }
 
-    /** Agrega un dato al final de la lista. */
-    public void agregarAlFinal(T dato) {
+    /** Agrega un elemento al final de la lista. */
+    public void agregar(T dato) {
         Nodo<T> nuevo = new Nodo<>(dato);
         if (cabeza == null) {
             cabeza = nuevo;
         } else {
-            cola.siguiente = nuevo;
+            Nodo<T> actual = cabeza;
+            while (actual.siguiente != null) {
+                actual = actual.siguiente;
+            }
+            actual.siguiente = nuevo;
         }
-        cola = nuevo;
         tamanio++;
     }
 
-    /** Agrega un dato al inicio de la lista. */
+    /** Agrega un elemento al inicio de la lista. */
     public void agregarAlInicio(T dato) {
         Nodo<T> nuevo = new Nodo<>(dato);
         nuevo.siguiente = cabeza;
         cabeza = nuevo;
-        if (cola == null) {
-            cola = nuevo;
-        }
         tamanio++;
     }
 
-    /** Devuelve el dato en la posición indicada (0 = primero). */
-    public T obtener(int indice) {
-        if (indice < 0 || indice >= tamanio) {
-            throw new IndexOutOfBoundsException("Índice fuera de rango: " + indice);
-        }
-        Nodo<T> actual = cabeza;
-        for (int i = 0; i < indice; i++) {
-            actual = actual.siguiente;
-        }
-        return actual.dato;
-    }
-
-    /** Devuelve el primer dato que cumple la condición, o null si ninguno la cumple. */
-    public T buscarPrimero(Predicate<T> condicion) {
+    /** Devuelve el primer elemento que cumple la condición, o null si no existe. */
+    public T buscarSi(Predicate<T> condicion) {
         for (T dato : this) {
             if (condicion.test(dato)) {
                 return dato;
@@ -76,62 +62,53 @@ public class ListaEnlazada<T> implements Iterable<T> {
         return null;
     }
 
-    /** Elimina todos los datos que cumplen la condición y devuelve cuántos se eliminaron. */
-    public int eliminarTodos(Predicate<T> condicion) {
+    /** Elimina todos los elementos que cumplen la condición y devuelve cuántos eliminó. */
+    public int eliminarSi(Predicate<T> condicion) {
         int eliminados = 0;
-        Nodo<T> anterior = null;
+        while (cabeza != null && condicion.test(cabeza.dato)) {
+            cabeza = cabeza.siguiente;
+            eliminados++;
+        }
         Nodo<T> actual = cabeza;
-        while (actual != null) {
-            if (condicion.test(actual.dato)) {
-                if (anterior == null) {
-                    cabeza = actual.siguiente;   // se elimina la cabeza
-                } else {
-                    anterior.siguiente = actual.siguiente;
-                }
-                if (actual == cola) {
-                    cola = anterior;             // se elimina la cola
-                }
-                tamanio--;
+        while (actual != null && actual.siguiente != null) {
+            if (condicion.test(actual.siguiente.dato)) {
+                actual.siguiente = actual.siguiente.siguiente;
                 eliminados++;
             } else {
-                anterior = actual;
+                actual = actual.siguiente;
             }
-            actual = actual.siguiente;
         }
+        tamanio -= eliminados;
         return eliminados;
     }
 
     /**
-     * Devuelve una NUEVA lista ordenada según el comparador (ordenación por inserción, estable).
-     * La lista original no se modifica.
+     * Ordena la lista reacomodando los nodos (inserción estable).
+     * cmp(a, b) &lt; 0 significa que a debe ir antes que b.
      */
-    public ListaEnlazada<T> copiaOrdenada(Comparator<T> comparador) {
-        ListaEnlazada<T> resultado = new ListaEnlazada<>();
-        for (T dato : this) {
-            resultado.insertarOrdenado(dato, comparador);
+    public void ordenar(Comparator<T> cmp) {
+        Nodo<T> pendientes = cabeza;
+        cabeza = null;
+        tamanio = 0;
+        while (pendientes != null) {
+            Nodo<T> siguiente = pendientes.siguiente;
+            pendientes.siguiente = null;
+            insertarOrdenado(pendientes, cmp);
+            pendientes = siguiente;
         }
-        return resultado;
     }
 
-    /** Inserta el dato en la posición ordenada; los iguales quedan después de los existentes. */
-    private void insertarOrdenado(T dato, Comparator<T> comparador) {
-        Nodo<T> nuevo = new Nodo<>(dato);
-        if (cabeza == null || comparador.compare(dato, cabeza.dato) < 0) {
-            nuevo.siguiente = cabeza;
-            cabeza = nuevo;
-            if (cola == null) {
-                cola = nuevo;
-            }
+    private void insertarOrdenado(Nodo<T> nodo, Comparator<T> cmp) {
+        if (cabeza == null || cmp.compare(cabeza.dato, nodo.dato) > 0) {
+            nodo.siguiente = cabeza;
+            cabeza = nodo;
         } else {
-            Nodo<T> anterior = cabeza;
-            while (anterior.siguiente != null && comparador.compare(dato, anterior.siguiente.dato) >= 0) {
-                anterior = anterior.siguiente;
+            Nodo<T> actual = cabeza;
+            while (actual.siguiente != null && cmp.compare(actual.siguiente.dato, nodo.dato) <= 0) {
+                actual = actual.siguiente;
             }
-            nuevo.siguiente = anterior.siguiente;
-            anterior.siguiente = nuevo;
-            if (nuevo.siguiente == null) {
-                cola = nuevo;
-            }
+            nodo.siguiente = actual.siguiente;
+            actual.siguiente = nodo;
         }
         tamanio++;
     }
@@ -161,13 +138,11 @@ public class ListaEnlazada<T> implements Iterable<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
-        Nodo<T> actual = cabeza;
-        while (actual != null) {
-            sb.append(actual.dato);
-            if (actual.siguiente != null) {
+        for (T dato : this) {
+            if (sb.length() > 1) {
                 sb.append(", ");
             }
-            actual = actual.siguiente;
+            sb.append(dato);
         }
         return sb.append("]").toString();
     }

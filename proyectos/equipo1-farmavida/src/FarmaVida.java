@@ -1,107 +1,96 @@
 /**
- * Control de medicamentos de la farmacia 'FarmaVida'.
- * Estructura del enunciado: Lista Simplemente Enlazada (ListaEnlazada&lt;Medicamento&gt;, implementada a mano).
- * Los nombres de los métodos se mantienen tal como los define el enunciado.
+ * Control de medicamentos de la farmacia FarmaVida.
+ * Estructura: ListaEnlazada&lt;Medicamento&gt; (lista simplemente enlazada hecha a mano).
  */
 public class FarmaVida {
 
-    /** Umbral de stock para considerar un medicamento agotado (punto a). */
-    private static final int UMBRAL_AGOTADO = 5;
-
     private final ListaEnlazada<Medicamento> medicamentos = new ListaEnlazada<>();
 
-    /** Inserta un medicamento al final de la lista (ingreso de datos). */
-    public void registrarMedicamento(Medicamento medicamento) {
-        if (medicamento == null) {
-            throw new IllegalArgumentException("El medicamento no puede ser nulo.");
+    /** Inserta un medicamento. Interpretación: no se permiten códigos repetidos. */
+    public void insertar(Medicamento m) {
+        if (buscarPorCodigo(m.getCodigo()) != null) {
+            throw new IllegalArgumentException("Código duplicado: " + m.getCodigo());
         }
-        medicamentos.agregarAlFinal(medicamento);
+        medicamentos.agregar(m);
     }
 
-    public int cantidad() {
-        return medicamentos.size();
+    public Medicamento buscarPorCodigo(String codigo) {
+        return medicamentos.buscarSi(m -> m.getCodigo().equals(codigo));
     }
 
-    public ListaEnlazada<Medicamento> getMedicamentos() {
-        return medicamentos;
-    }
-
-    // =====================================================================
-    // Punto a) MedicamentosAgotados()
-    // Devuelve los nombres de los medicamentos cuyo stock sea <= 5 unidades.
-    // =====================================================================
+    // ===================== Punto a) =====================
+    /** Nombres de los medicamentos con stock menor o igual a 5 unidades. */
     public ListaEnlazada<String> MedicamentosAgotados() {
-        ListaEnlazada<String> nombresAgotados = new ListaEnlazada<>();
+        ListaEnlazada<String> nombres = new ListaEnlazada<>();
         for (Medicamento m : medicamentos) {
-            if (m.getStock() <= UMBRAL_AGOTADO) {
-                nombresAgotados.agregarAlFinal(m.getNombre());
+            if (m.getStock() <= 5) {
+                nombres.agregar(m.getNombre());
             }
         }
-        return nombresAgotados;
+        return nombres;
     }
 
-    // =====================================================================
-    // Punto b) PromedioPrecioPorCategoria(String categoria)
-    // Precio promedio de la categoría indicada. Devuelve 0.0 si no existen medicamentos de esa categoría.
-    // Interpretación: la comparación de categoría ignora mayúsculas/minúsculas.
-    // =====================================================================
+    // ===================== Punto b) =====================
+    /** Precio promedio de la categoría indicada. Devuelve 0.0 si no hay medicamentos en ella. */
     public double PromedioPrecioPorCategoria(String categoria) {
-        double suma = 0.0;
-        int contador = 0;
+        double suma = 0;
+        int cuenta = 0;
         for (Medicamento m : medicamentos) {
-            if (m.getCategoria().equalsIgnoreCase(categoria)) {
+            if (m.getCategoria().equals(categoria)) {
                 suma += m.getPrecio();
-                contador++;
+                cuenta++;
             }
         }
-        return contador == 0 ? 0.0 : suma / contador;
+        return cuenta == 0 ? 0.0 : suma / cuenta;
     }
 
-    // =====================================================================
-    // Punto c) ActualizarStock(String codigo, int cantidadAgregada)
-    // Busca por código y suma la cantidad entregada. true si existe, false si no.
-    // Interpretación: una cantidad negativa no es válida y lanza IllegalArgumentException.
-    // =====================================================================
+    // ===================== Punto c) =====================
+    /**
+     * Suma la cantidad entregada al stock del medicamento con ese código.
+     * Devuelve true si existe y false si no. Interpretación: una cantidad negativa lanza excepción.
+     */
     public boolean ActualizarStock(String codigo, int cantidadAgregada) {
         if (cantidadAgregada < 0) {
-            throw new IllegalArgumentException("La cantidad agregada no puede ser negativa.");
+            throw new IllegalArgumentException("La cantidad agregada no puede ser negativa");
         }
-        Medicamento encontrado = medicamentos.buscarPrimero(m -> m.getCodigo().equals(codigo));
-        if (encontrado == null) {
+        Medicamento m = buscarPorCodigo(codigo);
+        if (m == null) {
             return false;
         }
-        encontrado.sumarStock(cantidadAgregada);
+        m.setStock(m.getStock() + cantidadAgregada);
         return true;
     }
 
-    // =====================================================================
-    // Punto d) ListarPreciosInversos()
-    // Lista de precios en orden inverso al que fueron ingresados.
-    // Se recorre la lista original y cada precio se coloca al inicio de la nueva lista.
-    // =====================================================================
+    // ===================== Punto d) =====================
+    /** Precios en orden inverso al de ingreso: cada precio se antepone al construir la lista. */
     public ListaEnlazada<Double> ListarPreciosInversos() {
-        ListaEnlazada<Double> preciosInversos = new ListaEnlazada<>();
+        ListaEnlazada<Double> precios = new ListaEnlazada<>();
         for (Medicamento m : medicamentos) {
-            preciosInversos.agregarAlInicio(m.getPrecio());
+            precios.agregarAlInicio(m.getPrecio());
         }
-        return preciosInversos;
+        return precios;
     }
 
-    // =====================================================================
-    // Punto e) AplicarAumentoGeneral(double porcentaje)
-    // Incrementa el precio de todos los medicamentos en el porcentaje dado y devuelve
-    // la cantidad de medicamentos modificados.
-    // Interpretación: un porcentaje negativo lanza IllegalArgumentException.
-    // =====================================================================
+    // ===================== Punto e) =====================
+    /**
+     * Incrementa el precio de todos los medicamentos en el porcentaje dado
+     * y devuelve la cantidad de medicamentos modificados.
+     * Interpretación: el porcentaje de aumento no puede ser negativo.
+     */
     public int AplicarAumentoGeneral(double porcentaje) {
         if (porcentaje < 0) {
-            throw new IllegalArgumentException("El porcentaje de aumento no puede ser negativo.");
+            throw new IllegalArgumentException("El porcentaje de aumento no puede ser negativo");
         }
         int modificados = 0;
         for (Medicamento m : medicamentos) {
-            m.aumentarPrecio(porcentaje);
+            m.setPrecio(m.getPrecio() * (1 + porcentaje / 100.0));
             modificados++;
         }
         return modificados;
+    }
+
+    @Override
+    public String toString() {
+        return medicamentos.toString();
     }
 }

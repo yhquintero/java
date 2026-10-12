@@ -1,93 +1,90 @@
 /**
- * Registro de socios del centro deportivo 'FitGym'.
- * Estructura del enunciado: Lista Simplemente Enlazada (ListaEnlazada&lt;Socio&gt;, implementada a mano).
- * Los nombres de los métodos se mantienen tal como los define el enunciado.
+ * Registro de socios del centro deportivo FitGym.
+ * Estructura: ListaEnlazada&lt;Socio&gt; (lista simplemente enlazada hecha a mano).
  */
 public class FitGym {
 
     private final ListaEnlazada<Socio> socios = new ListaEnlazada<>();
 
-    /** Inserta un socio al final de la lista (ingreso de datos). */
-    public void registrarSocio(Socio socio) {
-        if (socio == null) {
-            throw new IllegalArgumentException("El socio no puede ser nulo.");
+    /** Registra un socio. Interpretación: no se permiten IDs repetidos. */
+    public void insertar(Socio s) {
+        if (buscarPorId(s.getIdSocio()) != null) {
+            throw new IllegalArgumentException("ID de socio duplicado: " + s.getIdSocio());
         }
-        socios.agregarAlFinal(socio);
+        socios.agregar(s);
     }
 
-    public int cantidad() {
-        return socios.size();
+    public Socio buscarPorId(String idSocio) {
+        return socios.buscarSi(s -> s.getIdSocio().equals(idSocio));
     }
 
-    public ListaEnlazada<Socio> getSocios() {
-        return socios;
-    }
-
-    // =====================================================================
-    // Punto a) MembresiasPorVencer(int diasLimite)
-    // IDs de los socios cuyos días restantes son menores o iguales a diasLimite (límite inclusivo).
-    // =====================================================================
+    // ===================== Punto a) =====================
+    /** IDs de los socios cuyos días restantes son menores o iguales a diasLimite. */
     public ListaEnlazada<String> MembresiasPorVencer(int diasLimite) {
         ListaEnlazada<String> ids = new ListaEnlazada<>();
         for (Socio s : socios) {
             if (s.getDiasRestantes() <= diasLimite) {
-                ids.agregarAlFinal(s.getIdSocio());
+                ids.agregar(s.getIdSocio());
             }
         }
         return ids;
     }
 
-    // =====================================================================
-    // Punto b) MostrarOrdenadosPorDias()
-    // Información de los socios ordenada de mayor a menor según los días restantes.
-    // Interpretación: se devuelve una copia ordenada (estable); la lista original no cambia.
-    // =====================================================================
+    // ===================== Punto b) =====================
+    /**
+     * Información de los socios ordenada de mayor a menor según los días restantes.
+     * Se devuelve una copia ordenada; el registro original no cambia.
+     */
     public ListaEnlazada<Socio> MostrarOrdenadosPorDias() {
-        return socios.copiaOrdenada((a, b) -> Integer.compare(b.getDiasRestantes(), a.getDiasRestantes()));
+        ListaEnlazada<Socio> copia = new ListaEnlazada<>();
+        for (Socio s : socios) {
+            copia.agregar(s);
+        }
+        copia.ordenar((a, b) -> Integer.compare(b.getDiasRestantes(), a.getDiasRestantes()));
+        return copia;
     }
 
-    // =====================================================================
-    // Punto c) CantidadSociosPorMembresia()
-    // String con el conteo de socios agrupados por tipo de membresía, en el orden Básica, Premium, VIP.
-    // Los tipos sin socios aparecen con 0.
-    // =====================================================================
+    // ===================== Punto c) =====================
+    /** Texto con el conteo de socios por tipo de membresía, p. ej. "Básica: 2 | Premium: 2 | VIP: 1". */
     public String CantidadSociosPorMembresia() {
-        int[] conteos = new int[Socio.TIPOS_MEMBRESIA.length];
-        for (Socio s : socios) {
-            conteos[Socio.indiceTipo(s.getTipoMembresia())]++;
-        }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < Socio.TIPOS_MEMBRESIA.length; i++) {
-            if (i > 0) {
+        for (String tipo : Socio.TIPOS) {
+            int cuenta = 0;
+            for (Socio s : socios) {
+                if (s.getTipoMembresia().equals(tipo)) {
+                    cuenta++;
+                }
+            }
+            if (sb.length() > 0) {
                 sb.append(" | ");
             }
-            sb.append(Socio.TIPOS_MEMBRESIA[i]).append(": ").append(conteos[i]);
+            sb.append(tipo).append(": ").append(cuenta);
         }
         return sb.toString();
     }
 
-    // =====================================================================
-    // Punto d) RenovarMembresia(String idSocio, int diasAdicionales)
-    // Busca el socio por ID y le suma los días adicionales. true si existe, false si no.
-    // Interpretación: diasAdicionales negativos lanzan IllegalArgumentException.
-    // =====================================================================
+    // ===================== Punto d) =====================
+    /** Suma los días adicionales al socio con ese ID. true si existe, false si no. */
     public boolean RenovarMembresia(String idSocio, int diasAdicionales) {
         if (diasAdicionales < 0) {
-            throw new IllegalArgumentException("Los días adicionales no pueden ser negativos.");
+            throw new IllegalArgumentException("Los días adicionales no pueden ser negativos");
         }
-        Socio encontrado = socios.buscarPrimero(s -> s.getIdSocio().equals(idSocio));
-        if (encontrado == null) {
+        Socio s = buscarPorId(idSocio);
+        if (s == null) {
             return false;
         }
-        encontrado.agregarDias(diasAdicionales);
+        s.sumarDias(diasAdicionales);
         return true;
     }
 
-    // =====================================================================
-    // Punto e) EliminarSociosSinDias()
-    // Elimina a todos los socios con 0 días restantes y devuelve la cantidad eliminada.
-    // =====================================================================
+    // ===================== Punto e) =====================
+    /** Elimina a los socios con 0 días restantes y devuelve cuántos eliminó. */
     public int EliminarSociosSinDias() {
-        return socios.eliminarTodos(s -> s.getDiasRestantes() == 0);
+        return socios.eliminarSi(s -> s.getDiasRestantes() == 0);
+    }
+
+    @Override
+    public String toString() {
+        return socios.toString();
     }
 }

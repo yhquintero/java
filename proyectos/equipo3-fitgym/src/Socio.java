@@ -1,12 +1,11 @@
-/**
- * Entidad Socio del centro deportivo 'FitGym'.
- * Atributos del enunciado: idSocio, nombre, tipoMembresia (Básica, Premium, VIP) y díasRestantes.
- * Nota: el atributo 'díasRestantes' se nombra 'diasRestantes' (sin tilde) para evitar problemas de codificación.
- */
+/** Socio del centro deportivo FitGym: ID, nombre, tipo de membresía y días restantes. */
 public class Socio {
 
-    /** Tipos de membresía permitidos según el enunciado (el orden es el de los conteos del punto c). */
-    public static final String[] TIPOS_MEMBRESIA = {"Básica", "Premium", "VIP"};
+    public static final String BASICA = "Básica";
+    public static final String PREMIUM = "Premium";
+    public static final String VIP = "VIP";
+    /** Tipos de membresía válidos, en el orden en que se muestran. */
+    public static final String[] TIPOS = {BASICA, PREMIUM, VIP};
 
     private final String idSocio;
     private final String nombre;
@@ -14,17 +13,11 @@ public class Socio {
     private int diasRestantes;
 
     public Socio(String idSocio, String nombre, String tipoMembresia, int diasRestantes) {
-        if (idSocio == null || idSocio.trim().isEmpty()) {
-            throw new IllegalArgumentException("El ID del socio no puede estar vacío.");
-        }
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío.");
-        }
-        if (indiceTipo(tipoMembresia) < 0) {
+        if (!esTipoValido(tipoMembresia)) {
             throw new IllegalArgumentException("Tipo de membresía no válido: " + tipoMembresia);
         }
         if (diasRestantes < 0) {
-            throw new IllegalArgumentException("Los días restantes no pueden ser negativos.");
+            throw new IllegalArgumentException("Los días restantes no pueden ser negativos");
         }
         this.idSocio = idSocio;
         this.nombre = nombre;
@@ -32,39 +25,27 @@ public class Socio {
         this.diasRestantes = diasRestantes;
     }
 
-    /** Devuelve la posición del tipo dentro de TIPOS_MEMBRESIA, o -1 si no es válido. */
-    public static int indiceTipo(String tipo) {
-        for (int i = 0; i < TIPOS_MEMBRESIA.length; i++) {
-            if (TIPOS_MEMBRESIA[i].equals(tipo)) {
-                return i;
+    public static boolean esTipoValido(String tipo) {
+        for (String t : TIPOS) {
+            if (t.equals(tipo)) {
+                return true;
             }
         }
-        return -1;
+        return false;
     }
 
-    public String getIdSocio() {
-        return idSocio;
-    }
+    public String getIdSocio() { return idSocio; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
 
-    public String getTipoMembresia() {
-        return tipoMembresia;
-    }
+    public String getTipoMembresia() { return tipoMembresia; }
 
-    public int getDiasRestantes() {
-        return diasRestantes;
-    }
+    public int getDiasRestantes() { return diasRestantes; }
 
-    /** Suma días a la membresía (usado por RenovarMembresia). */
-    void agregarDias(int dias) {
-        diasRestantes += dias;
-    }
+    public void sumarDias(int dias) { this.diasRestantes += dias; }
 
     @Override
     public String toString() {
-        return idSocio + " | " + nombre + " | membresía: " + tipoMembresia + " | días restantes: " + diasRestantes;
+        return idSocio + " | " + nombre + " | " + tipoMembresia + " | " + diasRestantes + " días";
     }
 }

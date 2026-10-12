@@ -1,73 +1,69 @@
 /**
- * Lista de reproducción (playlist) del reproductor de audio 'SoundFlow'.
- * Estructura del enunciado: Lista Doblemente Enlazada (ListaDobleEnlazada&lt;Cancion&gt;, implementada a mano).
- * Los nombres de los métodos se mantienen tal como los define el enunciado.
+ * Lista de reproducción (playlist) del reproductor SoundFlow.
+ * Estructura: ListaDobleEnlazada&lt;Cancion&gt; (lista doblemente enlazada hecha a mano).
  */
 public class SoundFlow {
 
-    private final ListaDobleEnlazada<Cancion> playlist = new ListaDobleEnlazada<>();
+    private final ListaDobleEnlazada<Cancion> canciones = new ListaDobleEnlazada<>();
 
-    /** Agrega una canción al final de la playlist (ingreso de datos). */
-    public void agregarCancion(Cancion cancion) {
-        if (cancion == null) {
-            throw new IllegalArgumentException("La canción no puede ser nula.");
+    /** Agrega una canción al final. Interpretación: no se permiten IDs repetidos. */
+    public void insertar(Cancion c) {
+        if (buscarPorId(c.getId()) != null) {
+            throw new IllegalArgumentException("ID de canción duplicado: " + c.getId());
         }
-        playlist.agregarAlFinal(cancion);
+        canciones.agregar(c);
     }
 
-    public int cantidad() {
-        return playlist.size();
+    public Cancion buscarPorId(String id) {
+        return canciones.buscarSi(c -> c.getId().equals(id));
     }
 
-    public ListaDobleEnlazada<Cancion> getPlaylist() {
-        return playlist;
+    public ListaDobleEnlazada<Cancion> getCanciones() {
+        return canciones;
     }
 
-    // =====================================================================
-    // Punto a) NavegarAdelanteYAtras()
-    // Recorre la playlist en orden directo (cabeza -> cola) y en orden inverso (cola -> cabeza),
-    // y devuelve ambos recorridos como texto.
-    // =====================================================================
+    // ===================== Punto a) =====================
+    /**
+     * Recorre la playlist en orden directo (cabeza a cola, siguiendo "siguiente")
+     * y en orden inverso (cola a cabeza, siguiendo "prev"). Devuelve ambos recorridos como texto.
+     */
     public String NavegarAdelanteYAtras() {
-        return "Orden directo: " + playlist.toString() + "\nOrden inverso: " + playlist.toStringInverso();
+        return "Orden directo: " + canciones + "\n"
+                + "Orden inverso: " + canciones.invertidaCopia();
     }
 
-    // =====================================================================
-    // Punto b) MoverCancionAlInicio(String id)
-    // Ubica la canción indicada al principio de la playlist, modificando los enlaces
-    // anterior y siguiente. Devuelve true si se encontró la canción, false si no.
-    // =====================================================================
+    // ===================== Punto b) =====================
+    /**
+     * Mueve la canción con ese ID al principio, reenlazando sus punteros prev y next.
+     * Devuelve true si la canción existe (la guía no indica el tipo de retorno).
+     */
     public boolean MoverCancionAlInicio(String id) {
-        ListaDobleEnlazada.Nodo<Cancion> nodo = playlist.buscarNodo(c -> c.getId().equals(id));
-        if (nodo == null) {
-            return false;
-        }
-        playlist.moverAlInicio(nodo);
-        return true;
+        return canciones.moverAlInicio(c -> c.getId().equals(id));
     }
 
-    // =====================================================================
-    // Punto c) DuracionTotalPlaylist()
-    // Tiempo total de reproducción acumulado, expresado en minutos y segundos (por ejemplo "20 min 29 s").
-    // Una playlist vacía devuelve "0 min 0 s".
-    // =====================================================================
+    // ===================== Punto c) =====================
+    /** Tiempo total de reproducción en minutos y segundos, p. ej. "13 min 50 s". */
     public String DuracionTotalPlaylist() {
-        long totalSegundos = 0;
-        for (Cancion c : playlist) {
-            totalSegundos += c.getDuracionSegundos();
+        int total = 0;
+        for (Cancion c : canciones) {
+            total += c.getDuracionSegundos();
         }
-        return (totalSegundos / 60) + " min " + (totalSegundos % 60) + " s";
+        return (total / 60) + " min " + (total % 60) + " s";
     }
 
-    // =====================================================================
-    // Punto d) EliminarCancionPorArtista(String artista)
-    // Elimina todas las canciones del artista indicado y devuelve la cantidad eliminada.
-    // Interpretación: la comparación de artista ignora mayúsculas/minúsculas.
-    // =====================================================================
+    // ===================== Punto d) =====================
+    /** Elimina todas las canciones del artista indicado y devuelve cuántas eliminó. */
     public int EliminarCancionPorArtista(String artista) {
-        if (artista == null || artista.trim().isEmpty()) {
-            throw new IllegalArgumentException("El artista no puede estar vacío.");
-        }
-        return playlist.eliminarTodos(c -> c.getArtista().equalsIgnoreCase(artista));
+        return canciones.eliminarSi(c -> c.getArtista().equalsIgnoreCase(artista));
+    }
+
+    /** Indica si los punteros prev y next de la playlist son coherentes. */
+    public boolean esConsistente() {
+        return canciones.esConsistente();
+    }
+
+    @Override
+    public String toString() {
+        return canciones.toString();
     }
 }

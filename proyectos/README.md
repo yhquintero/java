@@ -1,8 +1,9 @@
 # Proyectos de Estructuras de Datos (Examen Parcial, Guía Oficial)
 
-Un proyecto Java **independiente** por equipo (Equipos 1 a 9 del PDF). Cada carpeta `equipoN-*/src/`
-contiene sus propias clases y su propio `Main` con casos de prueba positivos y negativos. No hay
-dependencias entre proyectos ni librerías externas.
+Un proyecto Java **independiente** por equipo (Equipos 1 a 9 del PDF). Cada carpeta `equipoN-*/`
+contiene su propia carpeta `src/` con sus clases, un `Main` (demostración de los puntos de la guía
+con los datos de prueba sugeridos) y un `Pruebas` (casos positivos, negativos y de borde).
+No hay dependencias entre proyectos ni librerías externas.
 
 | Carpeta | Equipo | Problemática | Estructura |
 |---|---|---|---|
@@ -18,11 +19,15 @@ dependencias entre proyectos ni librerías externas.
 
 ## Compilar y ejecutar un proyecto
 
-Desde la carpeta raíz de `proyectos/` (ejemplo con el Equipo 1; cambie la carpeta para otro equipo):
+Desde la raíz del repositorio (ejemplo con el Equipo 1; cambie la carpeta para otro equipo):
 
 ```bash
-javac -encoding UTF-8 -d out/equipo1-farmavida equipo1-farmavida/src/*.java
-java -cp out/equipo1-farmavida Main
+cd proyectos/equipo1-farmavida
+javac -encoding UTF-8 -d out src/*.java
+java -cp out Main        # demostración de los puntos de la guía
+java -cp out Pruebas     # casos de prueba: [OK] / [FALLO] y resumen final
 ```
 
-Requisito: JDK 8 o superior. Cada `Main` imprime `[OK]` / `[FALLO]` por prueba y un resumen final.
+Requisito: JDK 8 o superior. Los `.class` se generan en `out/` y no se versionan (ver `.gitignore`).
+Cada `README.md` de proyecto explica la estructura de archivos, los casos de prueba, las
+interpretaciones adoptadas y la declaración de uso de Inteligencia Artificial.

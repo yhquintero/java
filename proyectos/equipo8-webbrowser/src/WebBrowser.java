@@ -1,81 +1,71 @@
-import java.util.Locale;
+import java.time.LocalTime;
 
 /**
- * Historial de páginas visitadas del navegador 'WebBrowser'.
- * Estructura del enunciado: Lista Doblemente Enlazada (ListaDobleEnlazada&lt;Pagina&gt;, implementada a mano).
- * Orden de almacenamiento: cronológico (la primera visita está en la cabeza; la más reciente, en la cola).
- * Los nombres de los métodos se mantienen tal como los define el enunciado.
+ * Historial de páginas visitadas del navegador WebBrowser.
+ * Estructura: ListaDobleEnlazada&lt;Pagina&gt; (lista doblemente enlazada hecha a mano).
+ * La visita más antigua está al inicio y la más reciente al final.
  */
 public class WebBrowser {
 
-    private final ListaDobleEnlazada<Pagina> historial = new ListaDobleEnlazada<>();
+    private final ListaDobleEnlazada<Pagina> visitas = new ListaDobleEnlazada<>();
 
-    /** Registra una visita al final del historial (la más reciente queda en la cola). */
-    public void registrarVisita(Pagina pagina) {
-        if (pagina == null) {
-            throw new IllegalArgumentException("La página no puede ser nula.");
-        }
-        historial.agregarAlFinal(pagina);
+    /** Registra una visita al final del historial (queda como la más reciente). */
+    public void registrarVisita(Pagina p) {
+        visitas.agregar(p);
     }
 
     public int cantidad() {
-        return historial.size();
+        return visitas.size();
     }
 
-    public ListaDobleEnlazada<Pagina> getHistorial() {
-        return historial;
+    public ListaDobleEnlazada<Pagina> getVisitas() {
+        return visitas;
     }
 
-    // =====================================================================
-    // Punto a) EliminarPaginaPorUrl(String url)
-    // Elimina una página específica reenlazando correctamente los nodos anterior y posterior
-    // (sirve para cabeza, nodo intermedio y cola). Devuelve true si se eliminó, false si no existe.
-    // Interpretación: si la URL aparece varias veces, se elimina la visita más antigua.
-    // =====================================================================
-    public boolean EliminarPaginaPorUrl(String url) {
-        ListaDobleEnlazada.Nodo<Pagina> nodo = historial.buscarNodo(p -> p.getUrl().equals(url));
-        if (nodo == null) {
-            return false;
-        }
-        historial.eliminarNodo(nodo);
-        return true;
+    // ===================== Punto a) =====================
+    /**
+     * Elimina la página con esa URL reenlazando los nodos anterior (prev) y posterior (next).
+     * Interpretación: si la URL aparece varias veces, se eliminan todas las visitas.
+     * Devuelve cuántas visitas se eliminaron.
+     */
+    public int EliminarPaginaPorUrl(String url) {
+        return visitas.eliminarSi(p -> p.getUrl().equals(url));
     }
 
-    // =====================================================================
-    // Punto b) MostrarHistorialReciente()
-    // Devuelve la lista de páginas desde la más reciente hasta la más antigua.
-    // Se devuelve una nueva lista; el historial original no cambia.
-    // =====================================================================
+    // ===================== Punto b) =====================
+    /** Páginas desde la más reciente hasta la más antigua. */
     public ListaDobleEnlazada<Pagina> MostrarHistorialReciente() {
-        return historial.copiaInversa();
+        return visitas.invertidaCopia();
     }
 
-    // =====================================================================
-    // Punto c) BuscarPorPalabraClave(String palabra)
-    // Devuelve las URL cuyo título contiene la palabra clave (sin distinguir mayúsculas),
-    // en orden cronológico. Una palabra vacía lanza IllegalArgumentException.
-    // =====================================================================
+    // ===================== Punto c) =====================
+    /** URLs cuyo título contiene la palabra clave (sin distinguir mayúsculas), en orden cronológico. */
     public ListaDobleEnlazada<String> BuscarPorPalabraClave(String palabra) {
         if (palabra == null || palabra.trim().isEmpty()) {
-            throw new IllegalArgumentException("La palabra clave no puede estar vacía.");
+            throw new IllegalArgumentException("La palabra clave no puede estar vacía");
         }
-        String clave = palabra.toLowerCase(Locale.ROOT);
+        String clave = palabra.trim().toLowerCase();
         ListaDobleEnlazada<String> urls = new ListaDobleEnlazada<>();
-        for (Pagina p : historial) {
-            if (p.getTituloPagina().toLowerCase(Locale.ROOT).contains(clave)) {
-                urls.agregarAlFinal(p.getUrl());
+        for (Pagina p : visitas) {
+            if (p.getTituloPagina().toLowerCase().contains(clave)) {
+                urls.agregar(p.getUrl());
             }
         }
         return urls;
     }
 
-    // =====================================================================
-    // Punto d) VaciarHistorialAntiguo(String horaLimite)
-    // Elimina las visitas realizadas ANTES de la hora límite (formato HH:mm) y devuelve la cantidad.
-    // Una visita a exactamente la hora límite se conserva.
-    // =====================================================================
+    // ===================== Punto d) =====================
+    /**
+     * Elimina las visitas realizadas estrictamente antes de la hora límite (formato HH:mm)
+     * y devuelve cuántas eliminó. Una visita a la hora exacta se conserva.
+     */
     public int VaciarHistorialAntiguo(String horaLimite) {
-        int limite = Pagina.aMinutos(horaLimite);   // valida el formato y lanza excepción si es incorrecto
-        return historial.eliminarTodos(p -> p.getMinutosVisita() < limite);
+        LocalTime limite = LocalTime.parse(horaLimite);
+        return visitas.eliminarSi(p -> p.getHoraVisita().isBefore(limite));
+    }
+
+    @Override
+    public String toString() {
+        return visitas.toString();
     }
 }

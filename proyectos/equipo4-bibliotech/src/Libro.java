@@ -1,12 +1,8 @@
-/**
- * Entidad Libro prestado en la biblioteca universitaria 'BiblioTech'.
- * Atributos del enunciado: código, título, categoría (Ingeniería, Historia, Literatura, Ciencias)
- * y días de préstamo. Nota: 'díasDePréstamo' se nombra 'diasDePrestamo' (sin tilde).
- */
+/** Libro prestado de la biblioteca BiblioTech: código, título, categoría y días de préstamo. */
 public class Libro {
 
-    /** Categorías permitidas según el enunciado. */
-    public static final String[] CATEGORIAS_VALIDAS = {"Ingeniería", "Historia", "Literatura", "Ciencias"};
+    /** Categorías permitidas según la guía. */
+    public static final String[] CATEGORIAS = {"Ingeniería", "Historia", "Literatura", "Ciencias"};
 
     private final String codigo;
     private final String titulo;
@@ -14,17 +10,11 @@ public class Libro {
     private int diasDePrestamo;
 
     public Libro(String codigo, String titulo, String categoria, int diasDePrestamo) {
-        if (codigo == null || codigo.trim().isEmpty()) {
-            throw new IllegalArgumentException("El código no puede estar vacío.");
-        }
-        if (titulo == null || titulo.trim().isEmpty()) {
-            throw new IllegalArgumentException("El título no puede estar vacío.");
-        }
         if (!esCategoriaValida(categoria)) {
             throw new IllegalArgumentException("Categoría no válida: " + categoria);
         }
         if (diasDePrestamo < 0) {
-            throw new IllegalArgumentException("Los días de préstamo no pueden ser negativos.");
+            throw new IllegalArgumentException("Los días de préstamo no pueden ser negativos");
         }
         this.codigo = codigo;
         this.titulo = titulo;
@@ -33,37 +23,26 @@ public class Libro {
     }
 
     public static boolean esCategoriaValida(String categoria) {
-        for (String valida : CATEGORIAS_VALIDAS) {
-            if (valida.equals(categoria)) {
+        for (String c : CATEGORIAS) {
+            if (c.equals(categoria)) {
                 return true;
             }
         }
         return false;
     }
 
-    public String getCodigo() {
-        return codigo;
-    }
+    public String getCodigo() { return codigo; }
 
-    public String getTitulo() {
-        return titulo;
-    }
+    public String getTitulo() { return titulo; }
 
-    public String getCategoria() {
-        return categoria;
-    }
+    public String getCategoria() { return categoria; }
 
-    public int getDiasDePrestamo() {
-        return diasDePrestamo;
-    }
+    public int getDiasDePrestamo() { return diasDePrestamo; }
 
-    /** Suma días al préstamo (usado por RenovarPrestamo). */
-    void agregarDias(int dias) {
-        diasDePrestamo += dias;
-    }
+    public void sumarDias(int dias) { this.diasDePrestamo += dias; }
 
     @Override
     public String toString() {
-        return codigo + " | " + titulo + " | " + categoria + " | " + diasDePrestamo + " días";
+        return codigo + " - " + titulo + " (" + categoria + "): " + diasDePrestamo + " días";
     }
 }

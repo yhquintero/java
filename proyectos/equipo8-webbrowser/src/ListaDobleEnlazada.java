@@ -4,32 +4,19 @@ import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 /**
- * Lista doblemente enlazada genérica, implementada a mano.
- * Cada nodo tiene un enlace 'anterior' y otro 'siguiente'; la lista conoce su cabeza y su cola.
- * No usa java.util.LinkedList ni otras colecciones de java.util para almacenar datos.
+ * Lista doblemente enlazada implementada a mano (no usa colecciones de java.util).
+ * Cada nodo tiene enlaces "prev" (anterior) y "siguiente" (next), y la lista guarda
+ * referencias a la cabeza y a la cola para poder recorrerla en ambos sentidos.
  */
 public class ListaDobleEnlazada<T> implements Iterable<T> {
 
-    /** Nodo de la lista: guarda un dato y los enlaces al nodo anterior y al siguiente. */
-    public static class Nodo<T> {
-        private T dato;
-        private Nodo<T> anterior;
-        private Nodo<T> siguiente;
+    private static class Nodo<T> {
+        T dato;
+        Nodo<T> prev;
+        Nodo<T> siguiente;
 
         Nodo(T dato) {
             this.dato = dato;
-        }
-
-        public T getDato() {
-            return dato;
-        }
-
-        public Nodo<T> getAnterior() {
-            return anterior;
-        }
-
-        public Nodo<T> getSiguiente() {
-            return siguiente;
         }
     }
 
@@ -41,64 +28,139 @@ public class ListaDobleEnlazada<T> implements Iterable<T> {
         return tamanio;
     }
 
-    public boolean estaVacia() {
+    public boolean isEmpty() {
         return tamanio == 0;
     }
 
-    public Nodo<T> getPrimerNodo() {
-        return cabeza;
+    /** Agrega un elemento al final de la lista. */
+    public void agregar(T dato) {
+        insertarAlFinal(new Nodo<>(dato));
     }
 
-    public Nodo<T> getUltimoNodo() {
-        return cola;
-    }
-
-    /** Agrega un dato al final de la lista. */
-    public void agregarAlFinal(T dato) {
+    /** Inserta el dato antes del primer elemento que cumple la condición; si no hay ninguno, al final. */
+    public void insertarAntesSi(T dato, Predicate<T> condicion) {
         Nodo<T> nuevo = new Nodo<>(dato);
-        nuevo.anterior = cola;
-        if (cola == null) {
-            cabeza = nuevo;
-        } else {
-            cola.siguiente = nuevo;
+        Nodo<T> actual = cabeza;
+        while (actual != null && !condicion.test(actual.dato)) {
+            actual = actual.siguiente;
         }
-        cola = nuevo;
-        tamanio++;
+        if (actual == null) {
+            insertarAlFinal(nuevo);
+        } else {
+            insertarAntes(nuevo, actual);
+        }
     }
 
-    /** Agrega un dato al inicio de la lista. */
-    public void agregarAlInicio(T dato) {
-        Nodo<T> nuevo = new Nodo<>(dato);
-        nuevo.siguiente = cabeza;
+    /** Elimina y devuelve el primer elemento, o null si la lista está vacía. */
+    public T quitarPrimero() {
         if (cabeza == null) {
-            cola = nuevo;
-        } else {
-            cabeza.anterior = nuevo;
+            return null;
         }
-        cabeza = nuevo;
-        tamanio++;
+        T dato = cabeza.dato;
+        desenlazar(cabeza);
+        return dato;
     }
 
-    /** Inserta un dato justo antes del nodo de referencia. Si la referencia es null, lo agrega al final. */
-    public void insertarAntesDe(Nodo<T> referencia, T dato) {
-        if (referencia == null) {
-            agregarAlFinal(dato);
-            return;
-        }
-        Nodo<T> nuevo = new Nodo<>(dato);
-        nuevo.siguiente = referencia;
-        nuevo.anterior = referencia.anterior;
-        if (referencia.anterior == null) {
-            cabeza = nuevo;
-        } else {
-            referencia.anterior.siguiente = nuevo;
-        }
-        referencia.anterior = nuevo;
-        tamanio++;
+    /** Devuelve el primer elemento que cumple la condición, o null si no existe. */
+    public T buscarSi(Predicate<T> condicion) {
+        Nodo<T> nodo = buscarNodo(condicion);
+        return nodo == null ? null : nodo.dato;
     }
 
-    /** Devuelve el primer nodo cuyo dato cumple la condición, o null si ninguno la cumple. */
-    public Nodo<T> buscarNodo(Predicate<T> condicion) {
+    /** Mueve al inicio el primer elemento que cumple la condición. Devuelve true si lo encontró. */
+    public boolean moverAlInicio(Predicate<T> condicion) {
+        Nodo<T> nodo = buscarNodo(condicion);
+        if (nodo == null) {
+            return false;
+        }
+        if (nodo != cabeza) {
+            desenlazar(nodo);
+            insertarAntes(nodo, cabeza);
+        }
+        return true;
+    }
+
+    /** Elimina todos los elementos que cumplen la condición y devuelve cuántos eliminó. */
+    public int eliminarSi(Predicate<T> condicion) {
+        int eliminados = 0;
+        Nodo<T> actual = cabeza;
+        while (actual != null) {
+            Nodo<T> siguiente = actual.siguiente;
+            if (condicion.test(actual.dato)) {
+                desenlazar(actual);
+                eliminados++;
+            }
+            actual = siguiente;
+        }
+        return eliminados;
+    }
+
+    /**
+     * Ordena la lista reacomodando los nodos y actualizando prev y next (inserción estable).
+     * cmp(a, b) &lt; 0 significa que a debe ir antes que b.
+     */
+    public void ordenar(Comparator<T> cmp) {
+        Nodo<T> pendientes = cabeza;
+        cabeza = null;
+        cola = null;
+        tamanio = 0;
+        while (pendientes != null) {
+            Nodo<T> siguiente = pendientes.siguiente;
+            pendientes.prev = null;
+            pendientes.siguiente = null;
+            insertarOrdenado(pendientes, cmp);
+            pendientes = siguiente;
+        }
+    }
+
+    private void insertarOrdenado(Nodo<T> nodo, Comparator<T> cmp) {
+        Nodo<T> actual = cabeza;
+        while (actual != null && cmp.compare(actual.dato, nodo.dato) <= 0) {
+            actual = actual.siguiente;
+        }
+        if (actual == null) {
+            insertarAlFinal(nodo);
+        } else {
+            insertarAntes(nodo, actual);
+        }
+    }
+
+    /** Devuelve una nueva lista con los mismos elementos en orden inverso (de la cola a la cabeza). */
+    public ListaDobleEnlazada<T> invertidaCopia() {
+        ListaDobleEnlazada<T> invertida = new ListaDobleEnlazada<>();
+        for (Nodo<T> n = cola; n != null; n = n.prev) {
+            invertida.agregar(n.dato);
+        }
+        return invertida;
+    }
+
+    /**
+     * Verifica la coherencia de los punteros: cada nodo debe apuntar bien a su anterior y a su
+     * siguiente, la cola debe ser el último nodo y el recorrido en ambos sentidos debe dar el tamaño.
+     */
+    public boolean esConsistente() {
+        int haciaAdelante = 0;
+        Nodo<T> anterior = null;
+        for (Nodo<T> n = cabeza; n != null; n = n.siguiente) {
+            if (n.prev != anterior) {
+                return false;
+            }
+            anterior = n;
+            haciaAdelante++;
+        }
+        if (anterior != cola) {
+            return false;
+        }
+        int haciaAtras = 0;
+        for (Nodo<T> n = cola; n != null; n = n.prev) {
+            haciaAtras++;
+        }
+        return haciaAdelante == tamanio && haciaAtras == tamanio;
+    }
+
+    // ----- Operaciones internas sobre los enlaces -----
+
+    private Nodo<T> buscarNodo(Predicate<T> condicion) {
         for (Nodo<T> n = cabeza; n != null; n = n.siguiente) {
             if (condicion.test(n.dato)) {
                 return n;
@@ -107,134 +169,49 @@ public class ListaDobleEnlazada<T> implements Iterable<T> {
         return null;
     }
 
-    /** Devuelve el primer dato que cumple la condición, o null si ninguno la cumple. */
-    public T buscarPrimero(Predicate<T> condicion) {
-        Nodo<T> nodo = buscarNodo(condicion);
-        return nodo == null ? null : nodo.dato;
+    /** Enlaza un nuevo nodo al final de la lista. */
+    private void insertarAlFinal(Nodo<T> nuevo) {
+        nuevo.prev = cola;
+        nuevo.siguiente = null;
+        if (cola != null) {
+            cola.siguiente = nuevo;
+        } else {
+            cabeza = nuevo;
+        }
+        cola = nuevo;
+        tamanio++;
     }
 
-    /**
-     * Elimina un nodo de la lista reenlazando su anterior y su siguiente (incluye cabeza y cola).
-     * Precondición: el nodo pertenece a esta lista (se obtiene con buscarNodo o getPrimerNodo).
-     */
-    public void eliminarNodo(Nodo<T> nodo) {
-        if (nodo.anterior != null) {
-            nodo.anterior.siguiente = nodo.siguiente;
+    /** Enlaza un nuevo nodo justo antes de la referencia dada. */
+    private void insertarAntes(Nodo<T> nuevo, Nodo<T> referencia) {
+        nuevo.siguiente = referencia;
+        nuevo.prev = referencia.prev;
+        if (referencia.prev != null) {
+            referencia.prev.siguiente = nuevo;
+        } else {
+            cabeza = nuevo;
+        }
+        referencia.prev = nuevo;
+        tamanio++;
+    }
+
+    /** Quita el nodo de la lista reenlazando sus vecinos (prev y next). */
+    private void desenlazar(Nodo<T> nodo) {
+        if (nodo.prev != null) {
+            nodo.prev.siguiente = nodo.siguiente;
         } else {
             cabeza = nodo.siguiente;
         }
         if (nodo.siguiente != null) {
-            nodo.siguiente.anterior = nodo.anterior;
+            nodo.siguiente.prev = nodo.prev;
         } else {
-            cola = nodo.anterior;
+            cola = nodo.prev;
         }
-        nodo.anterior = null;
+        nodo.prev = null;
         nodo.siguiente = null;
         tamanio--;
     }
 
-    /** Elimina todos los datos que cumplen la condición y devuelve cuántos se eliminaron. */
-    public int eliminarTodos(Predicate<T> condicion) {
-        int eliminados = 0;
-        Nodo<T> actual = cabeza;
-        while (actual != null) {
-            Nodo<T> siguiente = actual.siguiente;   // se guarda antes de desenlazar
-            if (condicion.test(actual.dato)) {
-                eliminarNodo(actual);
-                eliminados++;
-            }
-            actual = siguiente;
-        }
-        return eliminados;
-    }
-
-    /** Mueve un nodo de la lista al principio, reenlazando sus vecinos y los punteros de cabeza y cola. */
-    public void moverAlInicio(Nodo<T> nodo) {
-        if (nodo == cabeza) {
-            return;
-        }
-        // Desenlazar: como no es la cabeza, tiene anterior.
-        nodo.anterior.siguiente = nodo.siguiente;
-        if (nodo.siguiente != null) {
-            nodo.siguiente.anterior = nodo.anterior;
-        } else {
-            cola = nodo.anterior;                  // el nodo era la cola
-        }
-        // Enlazar al inicio.
-        nodo.anterior = null;
-        nodo.siguiente = cabeza;
-        cabeza.anterior = nodo;
-        cabeza = nodo;
-    }
-
-    /** Devuelve una NUEVA lista con los datos en orden inverso (del último al primero). */
-    public ListaDobleEnlazada<T> copiaInversa() {
-        ListaDobleEnlazada<T> resultado = new ListaDobleEnlazada<>();
-        for (Nodo<T> n = cola; n != null; n = n.anterior) {
-            resultado.agregarAlFinal(n.dato);
-        }
-        return resultado;
-    }
-
-    /**
-     * Ordena la lista EN SITIO reenlazando los nodos (no se copian datos).
-     * Ordenación por inserción estable, de menor a mayor según el comparador.
-     * Los nodos quedan con sus enlaces 'anterior' y 'siguiente' correctamente actualizados.
-     */
-    public void ordenar(Comparator<T> comparador) {
-        Nodo<T> pendientes = cabeza;   // nodos que aún no se han colocado
-        cabeza = null;
-        cola = null;
-        while (pendientes != null) {
-            Nodo<T> actual = pendientes;
-            pendientes = pendientes.siguiente;
-            // Primera posición de la lista ya ordenada antes de la cual debe ir 'actual'.
-            Nodo<T> referencia = cabeza;
-            while (referencia != null && comparador.compare(actual.dato, referencia.dato) >= 0) {
-                referencia = referencia.siguiente;
-            }
-            actual.siguiente = referencia;
-            if (referencia == null) {              // va al final
-                actual.anterior = cola;
-                if (cola == null) {
-                    cabeza = actual;
-                } else {
-                    cola.siguiente = actual;
-                }
-                cola = actual;
-            } else {                               // va antes de 'referencia'
-                actual.anterior = referencia.anterior;
-                if (referencia.anterior == null) {
-                    cabeza = actual;
-                } else {
-                    referencia.anterior.siguiente = actual;
-                }
-                referencia.anterior = actual;
-            }
-        }
-    }
-
-    /** Comprueba que los enlaces 'anterior' y 'siguiente' sean coherentes en ambos sentidos. */
-    public boolean enlacesConsistentes() {
-        if (cabeza == null) {
-            return cola == null && tamanio == 0;
-        }
-        if (cabeza.anterior != null || cola.siguiente != null) {
-            return false;
-        }
-        int contador = 0;
-        Nodo<T> previo = null;
-        for (Nodo<T> n = cabeza; n != null; n = n.siguiente) {
-            if (n.anterior != previo) {
-                return false;
-            }
-            previo = n;
-            contador++;
-        }
-        return previo == cola && contador == tamanio;
-    }
-
-    /** Iterador en orden directo (de la cabeza a la cola). */
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
@@ -257,27 +234,14 @@ public class ListaDobleEnlazada<T> implements Iterable<T> {
         };
     }
 
-    /** Texto de la lista en orden directo (de la cabeza a la cola). */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
-        for (Nodo<T> n = cabeza; n != null; n = n.siguiente) {
-            sb.append(n.dato);
-            if (n.siguiente != null) {
+        for (T dato : this) {
+            if (sb.length() > 1) {
                 sb.append(", ");
             }
-        }
-        return sb.append("]").toString();
-    }
-
-    /** Texto de la lista en orden inverso (de la cola a la cabeza), recorriendo los enlaces 'anterior'. */
-    public String toStringInverso() {
-        StringBuilder sb = new StringBuilder("[");
-        for (Nodo<T> n = cola; n != null; n = n.anterior) {
-            sb.append(n.dato);
-            if (n.anterior != null) {
-                sb.append(", ");
-            }
+            sb.append(dato);
         }
         return sb.append("]").toString();
     }

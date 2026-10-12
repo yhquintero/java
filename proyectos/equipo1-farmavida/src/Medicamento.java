@@ -1,14 +1,10 @@
 import java.util.Locale;
 
-/**
- * Entidad Medicamento de la farmacia 'FarmaVida'.
- * Atributos del enunciado: código, nombre, categoría (Analgésico, Antibiótico, Antiinflamatorio, Vitamina),
- * stock y precio.
- */
+/** Medicamento de la farmacia FarmaVida: código, nombre, categoría, stock y precio. */
 public class Medicamento {
 
-    /** Categorías permitidas según el enunciado. */
-    public static final String[] CATEGORIAS_VALIDAS = {"Analgésico", "Antibiótico", "Antiinflamatorio", "Vitamina"};
+    /** Categorías permitidas según la guía. */
+    public static final String[] CATEGORIAS = {"Analgésico", "Antibiótico", "Antiinflamatorio", "Vitamina"};
 
     private final String codigo;
     private final String nombre;
@@ -17,20 +13,11 @@ public class Medicamento {
     private double precio;
 
     public Medicamento(String codigo, String nombre, String categoria, int stock, double precio) {
-        if (codigo == null || codigo.trim().isEmpty()) {
-            throw new IllegalArgumentException("El código no puede estar vacío.");
-        }
-        if (nombre == null || nombre.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre no puede estar vacío.");
-        }
         if (!esCategoriaValida(categoria)) {
             throw new IllegalArgumentException("Categoría no válida: " + categoria);
         }
-        if (stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo.");
-        }
-        if (precio < 0) {
-            throw new IllegalArgumentException("El precio no puede ser negativo.");
+        if (stock < 0 || precio < 0) {
+            throw new IllegalArgumentException("El stock y el precio no pueden ser negativos");
         }
         this.codigo = codigo;
         this.nombre = nombre;
@@ -40,47 +27,31 @@ public class Medicamento {
     }
 
     public static boolean esCategoriaValida(String categoria) {
-        for (String valida : CATEGORIAS_VALIDAS) {
-            if (valida.equals(categoria)) {
+        for (String c : CATEGORIAS) {
+            if (c.equals(categoria)) {
                 return true;
             }
         }
         return false;
     }
 
-    public String getCodigo() {
-        return codigo;
-    }
+    public String getCodigo() { return codigo; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
 
-    public String getCategoria() {
-        return categoria;
-    }
+    public String getCategoria() { return categoria; }
 
-    public int getStock() {
-        return stock;
-    }
+    public int getStock() { return stock; }
 
-    public double getPrecio() {
-        return precio;
-    }
+    public void setStock(int stock) { this.stock = stock; }
 
-    /** Suma unidades al stock (usado por ActualizarStock). */
-    void sumarStock(int cantidad) {
-        stock += cantidad;
-    }
+    public double getPrecio() { return precio; }
 
-    /** Incrementa el precio en un porcentaje (usado por AplicarAumentoGeneral). */
-    void aumentarPrecio(double porcentaje) {
-        precio = precio + precio * porcentaje / 100.0;
-    }
+    public void setPrecio(double precio) { this.precio = precio; }
 
     @Override
     public String toString() {
-        return String.format(Locale.US, "%s - %s (%s) | stock: %d | precio: %.2f",
+        return String.format(Locale.US, "%s %s (%s) stock=%d precio=%.2f",
                 codigo, nombre, categoria, stock, precio);
     }
 }

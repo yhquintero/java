@@ -1,92 +1,89 @@
+import java.util.Comparator;
+
 /**
- * Control de vuelos programados de la aerolínea 'SkyFly'.
- * Estructura del enunciado: Lista Simplemente Enlazada (ListaEnlazada&lt;Vuelo&gt;, implementada a mano).
- * Los nombres de los métodos se mantienen tal como los define el enunciado.
+ * Control de vuelos programados de la aerolínea SkyFly.
+ * Estructura: ListaEnlazada&lt;Vuelo&gt; (lista simplemente enlazada hecha a mano).
  */
 public class SkyFly {
 
     private final ListaEnlazada<Vuelo> vuelos = new ListaEnlazada<>();
 
-    /** Inserta un vuelo al final de la lista (ingreso de datos). */
-    public void registrarVuelo(Vuelo vuelo) {
-        if (vuelo == null) {
-            throw new IllegalArgumentException("El vuelo no puede ser nulo.");
+    /** Registra un vuelo. Interpretación: no se permiten números de vuelo repetidos. */
+    public void insertar(Vuelo v) {
+        if (buscarPorNumero(v.getNumeroVuelo()) != null) {
+            throw new IllegalArgumentException("Número de vuelo duplicado: " + v.getNumeroVuelo());
         }
-        vuelos.agregarAlFinal(vuelo);
+        vuelos.agregar(v);
     }
 
-    public int cantidad() {
-        return vuelos.size();
+    public Vuelo buscarPorNumero(String numeroVuelo) {
+        return vuelos.buscarSi(v -> v.getNumeroVuelo().equals(numeroVuelo));
     }
 
-    public ListaEnlazada<Vuelo> getVuelos() {
-        return vuelos;
-    }
-
-    // =====================================================================
-    // Punto a) VuelosDemorados()
-    // Listado con los números de vuelo cuyo estado es 'Demorado'.
-    // =====================================================================
+    // ===================== Punto a) =====================
+    /** Números de vuelo cuyo estado es 'Demorado'. */
     public ListaEnlazada<String> VuelosDemorados() {
         ListaEnlazada<String> numeros = new ListaEnlazada<>();
         for (Vuelo v : vuelos) {
             if (Vuelo.DEMORADO.equals(v.getEstado())) {
-                numeros.agregarAlFinal(v.getNumeroVuelo());
+                numeros.agregar(v.getNumeroVuelo());
             }
         }
         return numeros;
     }
 
-    // =====================================================================
-    // Punto b) MostrarOrdenadosPorDuracion()
-    // Información de los vuelos ordenada por duración de menor a mayor.
-    // Interpretación: se devuelve una copia ordenada (estable); la lista original no cambia.
-    // =====================================================================
+    // ===================== Punto b) =====================
+    /**
+     * Información de los vuelos ordenada por duración de menor a mayor.
+     * Se devuelve una copia ordenada; la lista original no cambia.
+     */
     public ListaEnlazada<Vuelo> MostrarOrdenadosPorDuracion() {
-        return vuelos.copiaOrdenada((a, b) -> Integer.compare(a.getDuracionMinutos(), b.getDuracionMinutos()));
-    }
-
-    // =====================================================================
-    // Punto c) CancelarVuelosADestino(String destino)
-    // Elimina todos los vuelos hacia el destino indicado y devuelve cuántos se eliminaron.
-    // Interpretación: la comparación de destino ignora mayúsculas/minúsculas.
-    // =====================================================================
-    public int CancelarVuelosADestino(String destino) {
-        if (destino == null || destino.trim().isEmpty()) {
-            throw new IllegalArgumentException("El destino no puede estar vacío.");
+        ListaEnlazada<Vuelo> copia = new ListaEnlazada<>();
+        for (Vuelo v : vuelos) {
+            copia.agregar(v);
         }
-        return vuelos.eliminarTodos(v -> v.getDestino().equalsIgnoreCase(destino));
+        copia.ordenar(Comparator.comparingInt(Vuelo::getDuracionMinutos));
+        return copia;
     }
 
-    // =====================================================================
-    // Punto d) CambiarEstadoVuelo(String numeroVuelo, String nuevoEstado)
-    // Busca el vuelo por su número y actualiza su estado. true si se encontró, false si no.
-    // Interpretación: un estado fuera de (A tiempo, Demorado, Cancelado) lanza IllegalArgumentException.
-    // =====================================================================
+    // ===================== Punto c) =====================
+    /**
+     * Elimina todos los vuelos hacia el destino indicado y devuelve cuántos eliminó.
+     * Interpretación: la guía dice "cancelar" en el nombre y "eliminar" en la descripción;
+     * se implementa la descripción (se quitan los vuelos de la lista). Comparación sin distinguir mayúsculas.
+     */
+    public int CancelarVuelosADestino(String destino) {
+        return vuelos.eliminarSi(v -> v.getDestino().equalsIgnoreCase(destino));
+    }
+
+    // ===================== Punto d) =====================
+    /** Actualiza el estado del vuelo. true si se encontró, false en caso contrario. */
     public boolean CambiarEstadoVuelo(String numeroVuelo, String nuevoEstado) {
         if (!Vuelo.esEstadoValido(nuevoEstado)) {
             throw new IllegalArgumentException("Estado no válido: " + nuevoEstado);
         }
-        Vuelo encontrado = vuelos.buscarPrimero(v -> v.getNumeroVuelo().equals(numeroVuelo));
-        if (encontrado == null) {
+        Vuelo v = buscarPorNumero(numeroVuelo);
+        if (v == null) {
             return false;
         }
-        encontrado.cambiarEstado(nuevoEstado);
+        v.setEstado(nuevoEstado);
         return true;
     }
 
-    // =====================================================================
-    // Punto e) BuscarVueloMasLargo()
-    // Información del vuelo con mayor duración en minutos. Si hay empate, gana el primero registrado.
-    // Devuelve null si la lista está vacía.
-    // =====================================================================
+    // ===================== Punto e) =====================
+    /** Vuelo con mayor duración en minutos. Devuelve null si la lista está vacía. */
     public Vuelo BuscarVueloMasLargo() {
-        Vuelo masLargo = null;
+        Vuelo mayor = null;
         for (Vuelo v : vuelos) {
-            if (masLargo == null || v.getDuracionMinutos() > masLargo.getDuracionMinutos()) {
-                masLargo = v;
+            if (mayor == null || v.getDuracionMinutos() > mayor.getDuracionMinutos()) {
+                mayor = v;
             }
         }
-        return masLargo;
+        return mayor;
+    }
+
+    @Override
+    public String toString() {
+        return vuelos.toString();
     }
 }
