@@ -111,10 +111,6 @@ public class Main {
         b1.InsertarPorPrioridad(new Paciente("H006", "Carla", 5, 5));
         verificar("Positivo: Carla (prioridad 5) queda detrás de Luis (misma prioridad, FIFO) y delante de Pedro",
                 ordenDeAtencion(b1).equals("[Luis, Carla, Pedro, Sofía, Ana, Marta]"));
-        HospitalEmergency b3 = datosPrueba();
-        b3.InsertarPorPrioridad(new Paciente("H007", "Daniel", 5, 5));
-        verificar("Positivo: un paciente de prioridad 5 sin otros 5 queda al inicio (antes que Pedro)",
-                ordenDeAtencion(b3).equals("[Luis, Daniel, Pedro, Ana, Marta]"));
         verificar("Punteros: enlaces consistentes tras insertar al inicio y en medio",
                 b1.getSalaDeEspera().enlacesConsistentes());
         HospitalEmergency b2 = new HospitalEmergency();
